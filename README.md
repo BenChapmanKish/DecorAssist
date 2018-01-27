@@ -3,6 +3,13 @@
 # API docs:
 
 ### /login (POST)
-body:
-username=$username
-password=$password
+
+request body:
+
+username (string)
+
+password (string)
+
+response body:
+
+success (bool)
