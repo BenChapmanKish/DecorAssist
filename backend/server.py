@@ -1,6 +1,29 @@
+from __future__ import print_function
 import flask
 import flask_login
 import json
+import sys
+
+
+
+##### RESPONSES #####
+
+responseInvalidLogin = json.dumps({
+    'success': False,
+    'message': "Your login information was wrong >:("
+})
+
+responseNotAuthorized = json.dumps({
+    'success': False,
+    'message': "You aren't logged in!"
+})
+
+responseLoggedOut = json.dumps({
+    'success': True,
+    'message': "You are now logged out!"
+})
+
+#####################
 
 app = flask.Flask(__name__)
 app.secret_key = 'DecorAssist secret key ;)'
@@ -49,17 +72,9 @@ def request_loader(request):
     user.is_authenticated = request.form['password'] == users[username]['password']
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if flask.request.method == 'GET':
-        return '''
-               <form action='login' method='POST'>
-                <input type='text' name='username' id='username' placeholder='username'/>
-                <input type='password' name='password' id='password' placeholder='password'/>
-                <input type='submit' name='submit'/>
-               </form>
-               '''
 
+@app.route('/login', methods=['POST'])
+def login():
     username = flask.request.form['username']
     if flask.request.form['password'] == users[username]['password']:
         user = User()
@@ -67,7 +82,7 @@ def login():
         flask_login.login_user(user)
         return flask.redirect(flask.url_for('protected'))
 
-    return 'Bad login'
+    return responseBadLogin
 
 
 @app.route('/protected')
@@ -78,8 +93,8 @@ def protected():
 @app.route('/logout')
 def logout():
     flask_login.logout_user()
-    return 'Logged out'
+    return responseLoggedOut
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
-    return 'Unauthorized'
+    return responseNotAuthorized
