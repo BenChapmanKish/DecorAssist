@@ -59,19 +59,44 @@ responseErrorCreatingRoom = json.dumps({
     'message':'There was a problem creating a room!'
 })
 
+responseSuccessEditingRoom = json.dumps({
+    'success': True,
+    'message': 'Your room has been updated.'
+})
+
 responseErrorEditingRoom = json.dumps({
     'success': False,
     'message': 'There was a problem editing your room!'
+})
+
+responseSuccessRemovingRoom = json.dumps({
+    'success': True,
+    'message': 'Your room has been removed!'
+})
+
+responseErrorRemovingRoom = json.dumps({
+    'success': False,
+    'message': 'There was a problem removing your room!'
+})
+
+responseSuccessDeletingUser = json.dumps({
+    'success': True,
+    'message': 'Your account has been deleted!'
+})
+
+responseErrorDeletingUser = json.dumps({
+    'success': False,
+    'message': 'There was a problem deleting your account!'
 })
 
 #####################
 
 #### Exceptions #####
 
-class userNotFound(Exception):
+class userNotFound(BaseException):
     pass
 
-class roomNotFound(Exception):
+class roomNotFound(BaseException):
     pass
 
 #####################
@@ -114,7 +139,12 @@ class User(flask_login.UserMixin):
         self.id        = user['username']
         self.password  = user['password']
         self.name      = user['name']
-        self.rooms     = [Room(room) for room in user['rooms']]
+        self.rooms     = []
+        for room in user['rooms']:
+            try:
+                self.rooms.append(Room(room))
+            except roomNotFound:
+                pass
 
 class Room():
     def __init__(self, room_id):
@@ -141,7 +171,7 @@ def main():
 def user_loader(username):
     try:
         user = User(username)
-    except userNotFound:
+    except (userNotFound, roomNotFound):
         return
     return user
 
@@ -150,7 +180,7 @@ def request_loader(request):
     username = request.form.get('username')
     try:
         user = User(username)
-    except userNotFound:
+    except (userNotFound, roomNotFound):
         return
     user.is_authenticated = request.form['password'] == user.password
 
@@ -201,6 +231,24 @@ def login():
     except:
         return responseInvalidLogin
 
+@app.route('/delete_self')
+@flask_login.login_required
+def delete_self():
+    user = flask_login.current_user
+
+    for room in user.rooms:
+        try:
+            mongo.db.rooms.delete_one({'_id': room.id})
+        except:
+            pass
+
+    try:
+        mongo.db.users.delete_one({'username': user.id})
+        flask_login.logout_user()
+        return flask.redirect(flask.url_for('homepage'))
+    except:
+        return responseErrorDeletingUser
+
 
 @app.route('/homepage')
 @flask_login.login_required
@@ -241,15 +289,13 @@ def room(room_id):
     })
 
 
-def get_new_room_id():
-    # This is really hacky
-    return max(rooms.keys()) + 1
     
 
 @app.route('/new_room', methods=['POST'])
 @flask_login.login_required
 def new_room():
-    owner     = flask_login.current_user.id
+    user      = flask_login.current_user
+    owner     = user.id
     room_type = flask.request.form['type']
     furniture = flask.request.form['furniture']
 
@@ -258,7 +304,7 @@ def new_room():
     new_room = { 'owner': owner, 'type': room_type, 'furniture': furniture}
     try:
         room_id = mongo.db.rooms.insert_one({'owner':owner, 'type':room_type, 'furniture':furniture}).inserted_id
-        rooms = mongo.db.users.find_one({'username':owner})['rooms']
+        rooms = [room.id for room in user.rooms]
         rooms.append(room_id)
         mongo.db.users.update_one({'username':owner},{'$set':{'rooms':rooms}})
         return flask.redirect(flask.url_for('room', room_id=room_id))
@@ -276,9 +322,12 @@ def edit_room(room_id):
 
     user = flask_login.current_user
     room_id = ObjectId(room_id)
-    room = Room(room_id)
-
-    if (room == None or room.owner != user.id):
+    
+    try:
+        room = Room(room_id)
+    except roomNotFound:
+        return responseInvalidRoom
+    if room.owner != user.id:
         return responseNotAuthorized
 
     room_type = flask.request.form.get('type', None)
@@ -293,9 +342,36 @@ def edit_room(room_id):
             mongo.db.rooms.update_one({'_id': room_id}, {'$set': {'type': room_type}})
         if furniture:
             mongo.db.rooms.update_one({'_id': room_id}, {'$set': {'furniture': furniture}})
-        return flask.redirect(flask.url_for('room', room_id=room_id))
+        return responseSuccessEditingRoom
     except:
         return responseErrorEditingRoom
+
+
+
+@app.route('/delete_room/<room_id>')
+@flask_login.login_required
+def delete_room(room_id):
+    if not room_id:
+        return responseInvalidFormEntry
+
+    user = flask_login.current_user
+    room_id = ObjectId(room_id)
+    try:
+        room = Room(room_id)
+    except roomNotFound:
+        return responseInvalidRoom
+    if room.owner != user.id:
+        return responseNotAuthorized
+
+    try:
+        rooms = [room.id for room in user.rooms]
+        if room_id in rooms:
+            rooms.remove(room_id)
+        mongo.db.users.update_one({'username':user.id},{'$set':{'rooms':rooms}})
+        mongo.db.rooms.delete_one({'_id': room_id})
+        return responseSuccessRemovingRoom
+    except:
+        return responseErrorRemovingRoom
 
     
     
