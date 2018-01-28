@@ -4,10 +4,35 @@ from flask_pymongo import PyMongo
 from bson.json_util import dumps
 from bson import ObjectId
 import json
+from enum import Enum
 
+
+
+#### ROOM TYPES #####
+
+room_types = [
+'living_room',
+'game_room',
+'bedroom',
+'bathroom',
+'office',
+'kitchen',
+'entry'
+]
+
+def roomType(t):
+    if t in room_types:
+        return room_types.index(t)
+    else:
+        return -1
 
 
 ##### RESPONSES #####
+
+responseLoginSuccess = json.dumps({
+    'success': True,
+    'message': "You're now logged in!"
+})
 
 responseNotLoggedIn = json.dumps({
     'success': False,
@@ -39,6 +64,11 @@ responseLoggedOut = json.dumps({
     'message': "You are now logged out!"
 })
 
+responseSignupSuccess = json.dumps({
+    'success': True,
+    'message': "You're now a user of DecorAssist!"
+})
+
 responseNoParamsGiven = json.dumps({
     'success': False,
     'message':'Missing a parameter value'
@@ -52,6 +82,11 @@ responseUsernameTaken = json.dumps({
 responseErrorCreatingUser = json.dumps({
     'success': False,
     'message':'There was a problem creating your account!'
+})
+
+responseSuccessCreatingRoom = json.dumps({
+    'success': True,
+    'message': "You've created a new room!"
 })
 
 responseErrorCreatingRoom = json.dumps({
@@ -79,6 +114,11 @@ responseErrorRemovingRoom = json.dumps({
     'message': 'There was a problem removing your room!'
 })
 
+responseInvalidRoomType = json.dumps({
+    'success': False,
+    'message': "Sorry, that isn't a recognized room type!"
+})
+
 responseSuccessDeletingUser = json.dumps({
     'success': True,
     'message': 'Your account has been deleted!'
@@ -97,6 +137,9 @@ class userNotFound(BaseException):
     pass
 
 class roomNotFound(BaseException):
+    pass
+
+class roomTypeError(BaseException):
     pass
 
 #####################
@@ -155,15 +198,13 @@ class Room():
             raise roomNotFound()
         self.id        = room_id
         self.owner     = room['owner']
-        self.type      = room['type']
+        self.type      = roomType(room['type'])
         self.furniture = room['furniture']
 
 
 @app.route('/')
 def main():
-    if flask_login.current_user.is_authenticated:
-        return flask.redirect(flask.url_for('homepage'))
-    return responseNotLoggedIn
+    return flask.redirect(flask.url_for('homepage'))
 
 
 
@@ -200,7 +241,7 @@ def signup():
         mongo.db.users.insert({'username':username,'name':name,'password':password,'rooms':[]})
         user = User(username)
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('homepage'))
+        return responseSignupSuccess
     except:
         return responseErrorCreatingUser
     
@@ -227,7 +268,7 @@ def login():
         user = User(username)
         if flask.request.form['password'] == user.password:
             flask_login.login_user(user)
-            return flask.redirect(flask.url_for('homepage'))
+            return responseLoginSuccess
     except:
         return responseInvalidLogin
 
@@ -245,7 +286,7 @@ def delete_self():
     try:
         mongo.db.users.delete_one({'username': user.id})
         flask_login.logout_user()
-        return flask.redirect(flask.url_for('homepage'))
+        return responseSuccessDeletingUser
     except:
         return responseErrorDeletingUser
 
@@ -262,7 +303,7 @@ def homepage():
         },
         'rooms': [{
                    'id': str(room.id),
-                 'type': room.type,
+                 'type': roomType(room.type),
             'furniture': room.furniture
             } for room in user.rooms]
     })
@@ -284,7 +325,7 @@ def room(room_id):
     return json.dumps({
           'success': True,
                'id': str(room.id),
-             'type': room.type,
+             'type': roomType(room.type),
         'furniture': room.furniture
     })
 
@@ -297,6 +338,8 @@ def new_room():
     user      = flask_login.current_user
     owner     = user.id
     room_type = flask.request.form['type']
+    if room_type not in room_types:
+        return responseInvalidRoomType
     furniture = flask.request.form['furniture']
 
     if (not owner or not room_type or not furniture):
@@ -307,7 +350,7 @@ def new_room():
         rooms = [room.id for room in user.rooms]
         rooms.append(room_id)
         mongo.db.users.update_one({'username':owner},{'$set':{'rooms':rooms}})
-        return flask.redirect(flask.url_for('room', room_id=room_id))
+        return responseSuccessCreatingRoom
 
     except:
         return responseErrorCreatingRoom
@@ -331,6 +374,8 @@ def edit_room(room_id):
         return responseNotAuthorized
 
     room_type = flask.request.form.get('type', None)
+    if room_type not in room_types:
+        return responseInvalidRoomType
     furniture = flask.request.form.get('furniture', 'null')
     try:
         furniture = json.loads(furniture)
@@ -373,8 +418,6 @@ def delete_room(room_id):
     except:
         return responseErrorRemovingRoom
 
-    
-    
 
 
 @app.route('/logout')
