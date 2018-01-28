@@ -30,7 +30,7 @@
           <a class="nav-item nav-link" href="#">Feed</a>
           <a class="nav-item nav-link" href="#">Profile</a>
         </div>
-          <a type="" href="signin.html" class="btn btn-primary">Sign Out</a>
+          <div id="signInButton"></div>
       </div>
     </nav>
 
@@ -138,14 +138,35 @@
     <script src="js/bootstrap.min.js"></script>
 
     <script>
+      var baseUrl = 'https://flask-decorassistant.herokuapp.com/homepage';
+
+      var isLoggedIn;
+
 
       $(document).ready(function(){
 
-        var url = "http://127.0.0.1:5000/homepage";
+        $.getJSON(baseUrl, function(signInData) {
 
-        $.getJSON(url, function(data) {
-          //console.log(data);
-          document.getElementById("userHeader").innerHTML = !data.success ? data.message : data.user.name + "'s Rooms";
+          isLoggedIn = signInData.success;
+
+          if(isLoggedIn) {
+            document.getElementById("signInButton").innerHTML = '<a href="logout" class="btn btn-primary">Sign Out</a>';
+          } else {
+            document.getElementById("signInButton").innerHTML = '<a href="signin.html" class="btn btn-primary">Sign In</a>';
+          }
+
+        });
+
+      });
+
+
+
+      $(document).ready(function(){
+
+        $.getJSON(baseUrl, function(data) {
+
+          document.getElementById("userHeader").innerHTML = isLoggedIn ? data.user.name + "'s Rooms" : data.message;
+
         });
 
       });            
