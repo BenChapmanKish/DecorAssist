@@ -1,10 +1,10 @@
 from __future__ import print_function
 import flask
 import flask_login
+from flask_pymongo import PyMongo
+from bson.json_util import dumps
 import json
 import sys
-
-
 
 ##### RESPONSES #####
 
@@ -23,20 +23,73 @@ responseLoggedOut = json.dumps({
     'message': "You are now logged out!"
 })
 
+responseNoParamsGiven= json.dumps({
+    'success':False,
+    'message':'Missing a parameter value'
+})
+
+responseInvalidUser= json.dumps({
+    'success':False,
+    'message':'Username is already being used'
+})
+
 #####################
 
 app = flask.Flask(__name__)
+app.config['MONGO_URI'] = 'mongodb://admin:admin@ds117888.mlab.com:17888/decorate_assistant'
+mongo = PyMongo(app)
 app.secret_key = 'DecorAssist secret key ;)'
+
+#Database functions
+
+def save_new_user(username,name,password):
+    if ( not username or not password or not name):
+        return 
+    if ( len(list(mongo.db.users.find({'username':username}))) > 0 ):
+        return
+    try:
+        mongo.db.users.insert({'username':username,'name':name,'password':password,'rooms':[]})
+        return ({'success':True})
+    except:
+        return
+
+def get_user_info(username):
+    #get user object from mongodb server
+    if ( not username ):
+        return 
+    return (list(mongo.db.users.find({'username':username}))[0])
+
+def update_rooms(username,rooms):
+    #gets rooms using username, no return val
+    if ( not username ):
+        return
+    try:
+        mongo.db.users.update({'username':username},{'$set':{'rooms':rooms}})
+        return
+    except:
+        return
 
 @app.route('/', methods=['GET','POST'])
 def main():
-    data = flask.request.data
-    print(data)
-    if flask.request.method == 'POST':
-        print()
-        return json.dumps({'success':True})
-    elif flask.request.method == 'GET':
-        return json.dumps({'test':'test'})
+    data = 'test'
+    update_rooms('ben',[1,2,3,4])
+    ben = get_user_info('ben')
+    name = str(ben['name'])
+    username = str(ben['username'])
+    rooms = list(ben['rooms'])
+    print(name,file=sys.stderr)
+    print(username,file=sys.stderr)
+    print(rooms,file=sys.stderr)
+    try:
+        return json.dumps(ben)
+    except TypeError:
+        return dumps(ben)
+    
+    # if flask.request.method == 'POST':
+    #     print()
+    #     return json.dumps({'success':True})
+    # elif flask.request.method == 'GET':
+    #     return json.dumps({'test':'test'})
 
 
 
