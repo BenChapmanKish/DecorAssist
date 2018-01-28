@@ -55,7 +55,8 @@
         <div class="col">
           
           <div class="">
-            <h3>Big Poppa's Rooms</h3>
+            <p id="userHeader"></p>
+
             <hr>
           </div>  
 
@@ -132,7 +133,26 @@
 
     <!-- jQuery -->
     <script src="js/jquery.min.js"></script>
+
     <!-- Include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
+
+    <script>
+
+      $(document).ready(function(){
+
+        var url = "http://127.0.0.1:5000/homepage";
+
+        $.getJSON(url, function(data) {
+          //console.log(data);
+          document.getElementById("userHeader").innerHTML = !data.success ? data.message : data.user.name + "'s Rooms";
+        });
+
+      });            
+
+    </script>
+
   </body>
 </html>
+
+
