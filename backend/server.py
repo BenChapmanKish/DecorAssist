@@ -24,7 +24,7 @@ def roomType(t):
     if t in room_types:
         return room_types.index(t)
     else:
-        return -1
+        raise roomTypeError()
 
 
 ##### RESPONSES #####
@@ -198,7 +198,7 @@ class Room():
             raise roomNotFound()
         self.id        = room_id
         self.owner     = room['owner']
-        self.type      = roomType(room['type'])
+        self.type      = room['type']
         self.furniture = room['furniture']
 
 
@@ -303,7 +303,7 @@ def homepage():
         },
         'rooms': [{
                    'id': str(room.id),
-                 'type': roomType(room.type),
+                 'type': room.type,
             'furniture': room.furniture
             } for room in user.rooms]
     })
@@ -325,7 +325,7 @@ def room(room_id):
     return json.dumps({
           'success': True,
                'id': str(room.id),
-             'type': roomType(room.type),
+             'type': room.type,
         'furniture': room.furniture
     })
 
@@ -390,6 +390,76 @@ def edit_room(room_id):
         return responseSuccessEditingRoom
     except:
         return responseErrorEditingRoom
+
+
+@app.route('/room_suggest/<room_id>')
+@flask_login.login_required
+def room_suggest(room_id):
+    if not room_id:
+        return responseInvalidFormEntry
+
+    user = flask_login.current_user
+    room_id = ObjectId(room_id)
+    
+    try:
+        room = Room(room_id)
+    except roomNotFound:
+        return responseInvalidRoom
+    if room.owner != user.id:
+        return responseNotAuthorized
+
+
+    if room.type == 'living_room':
+        return json.dumps({
+            'success': True,
+            'decor_instructions': "Put the stuff in the place",
+            'purchase_ideas': "Buy a tiger stripe lamp to make your place feel skeevier!"
+        })
+
+    elif room.type == 'game_room':
+        return json.dumps({
+            'success': True,
+            'decor_instructions': "Put the stuff in the place",
+            'purchase_ideas': "Buy a dildotron: fun for the whole family!"
+        })
+
+    elif room.type == 'bedroom':
+        return json.dumps({
+            'success': True,
+            'decor_instructions': "Put the stuff in the place",
+            'purchase_ideas': "Buy an end table that's made of stacked cups"
+        })
+
+    elif room.type == 'bathroom':
+        return json.dumps({
+            'success': True,
+            'decor_instructions': "Put the stuff in the place",
+            'purchase_ideas': "Please consider investing in TP dude"
+        })
+
+    elif room.type == 'office':
+        return json.dumps({
+            'success': True,
+            'decor_instructions': "Put the stuff in the place",
+            'purchase_ideas': "Some scented lubes could really help with the working mindset"
+        })
+
+    elif room.type == 'kitchen':
+        return json.dumps({
+            'success': True,
+            'decor_instructions': "Put the stuff in the place",
+            'purchase_ideas': "Get the uber-chair: seats 4 people in only 1 chair!!!"
+        })
+
+    elif room.type == 'entry':
+        return json.dumps({
+            'success': True,
+            'decor_instructions': "Put the stuff in the place",
+            'purchase_ideas': "Put a cactus right in front of the closet for decorations"
+        })
+
+    else:
+        return responseInvalidRoomType
 
 
 
