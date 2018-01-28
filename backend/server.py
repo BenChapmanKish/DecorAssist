@@ -5,7 +5,7 @@ from bson.json_util import dumps
 from bson import ObjectId
 import json
 from enum import Enum
-
+import sys
 
 
 #### ROOM TYPES #####
@@ -260,6 +260,7 @@ def login():
                '''
     
     try:
+        print(flask.request.form,sys.stderr)
         username = flask.request.form['username']
     except:
         return responseInvalidFormEntry

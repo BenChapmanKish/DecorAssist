@@ -144,11 +144,11 @@
 
 
       $(document).ready(function(){
-
+        console.log(document.referrer);
         $.getJSON(baseUrl, function(signInData) {
 
           isLoggedIn = signInData.success;
-
+          console.log(signInData);
           if(isLoggedIn) {
             document.getElementById("signInButton").innerHTML = '<a href="logout" class="btn btn-primary">Sign Out</a>';
           } else {
