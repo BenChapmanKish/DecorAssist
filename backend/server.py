@@ -1,4 +1,3 @@
-from __future__ import print_function
 import flask
 import flask_login
 import json
@@ -41,23 +40,36 @@ def main():
 
 
 # Mock database:
-users = {  'steven': {'password': 'mypass'},
-        'big_poppa': {'password': 'daddy'}}
+users = {
+    'steven': {
+         'password': 'stevenrulez',
+             'name': 'Steven Richards',
+        'room_type': 'Living Room'
+        },
+    'big_poppa': {
+         'password': 'callmedaddy',
+             'name': 'Big Poppa Sr.',
+        'room_type': 'Bedroom'
+        }
+}
 
 login_manager = flask_login.LoginManager()
 
 login_manager.init_app(app)
 
 class User(flask_login.UserMixin):
-    pass
+    def __init__(self, username):
+        self.id = username
+        self.password  = users[username]['password']
+        self.name      = users[username]['name']
+        self.room_type = users[username]['room_type']
 
 @login_manager.user_loader
 def user_loader(username):
     if username not in users:
         return
 
-    user = User()
-    user.id = username
+    user = User(username)
     return user
 
 @login_manager.request_loader
@@ -66,29 +78,35 @@ def request_loader(request):
     if username not in users:
         return
 
-    user = User()
-    user.id = username
-
-    user.is_authenticated = request.form['password'] == users[username]['password']
+    user = User(username)
+    user.is_authenticated = request.form['password'] == user.password
 
 
 
-@app.route('/login', methods=['POST'])
+@app.route('/login', methods=['GET', 'POST'])
 def login():
+    if flask.request.method == 'GET':
+        return '''
+               <form action='login' method='POST'>
+                <input type='text' name='username' id='username' placeholder='username'/>
+                <input type='password' name='password' id='password' placeholder='password'/>
+                <input type='submit' name='submit'/>
+               </form>
+               '''
+
     username = flask.request.form['username']
-    if flask.request.form['password'] == users[username]['password']:
-        user = User()
-        user.id = username
+    user = User(username)
+    if flask.request.form['password'] == user.password:
         flask_login.login_user(user)
-        return flask.redirect(flask.url_for('protected'))
+        return flask.redirect(flask.url_for('homepage'))
 
     return responseBadLogin
 
 
-@app.route('/protected')
+@app.route('/homepage')
 @flask_login.login_required
-def protected():
-    return 'Logged in as: ' + flask_login.current_user.id
+def homepage():
+    return '<h3>Welcome to DecorAssist, <em>' + flask_login.current_user.name + '</em></h3>'
 
 @app.route('/logout')
 def logout():
