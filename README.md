@@ -1,15 +1,23 @@
 # DecorAssist
 
-# API docs:
+# API endpoints:
+
+### /signup (POST)
 
 ### /login (POST)
 
-request body:
+### /logout (GET)
 
-username (string)
+### /delete_self (GET)
 
-password (string)
+### /homepage (GET)
 
-response body:
+### /new_room (GET)
 
-success (bool)
+### /room/$id (GET)
+
+### /room_suggest/$id (GET)
+
+### /edit_room/$id (POST)
+
+### /delete_room/$id (GET)
