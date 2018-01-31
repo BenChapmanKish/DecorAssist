@@ -6,12 +6,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="description" content="">
     <meta name="author" content="">
-    <link rel="icon" href="http://getbootstrap.com/favicon.ico">
+    <link rel="icon" href="{{ url_for('static',filename='ico/favicon.ico')}}">
 
     <title>Profile</title>
 
     <!-- Bootstrap core CSS -->
-    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="{{ url_for('static',filename='css/bootstrap.min.css')}}" rel="stylesheet">
 
    
   </head>
@@ -62,7 +62,7 @@
 
           <div class="card-columns">
             <div class="card">
-              <img class="card-img-top" src="img/room.jpg" alt="Card image cap">
+              <img class="card-img-top" src="{{ url_for('static',filename='img/room.jpg') }}" alt="Card image cap">
               <div class="card-body">
                 <h5 class="card-title">Card title that wraps to a new line</h5>
                 <p class="card-text">This is a longer card with supporting text below as a natural lead-in to additional content. This content is a little bit longer.</p>
@@ -79,7 +79,7 @@
               </blockquote>
             </div>
             <div class="card">
-              <img class="card-img-top" src="img/room.jpg" alt="Card image cap">
+              <img class="card-img-top" src="{{ url_for('static',filename='img/room.jpg') }}" alt="Card image cap">
               <div class="card-body">
                 <h5 class="card-title">Card title</h5>
                 <p class="card-text">This card has supporting text below as a natural lead-in to additional content.</p>
@@ -104,7 +104,7 @@
               </div>
             </div>
             <div class="card">
-              <img class="card-img" src="img/room.jpg" alt="Card image">
+              <img class="card-img" src="{{ url_for('static',filename='img/room.jpg') }}" alt="Card image">
             </div>
             <div class="card p-3 text-right">
               <blockquote class="blockquote mb-0">
@@ -132,44 +132,12 @@
 
 
     <!-- jQuery -->
-    <script src="js/jquery.min.js"></script>
+    <script src="{{ url_for('static',filename='js/jquery.min.js')}}"></script>
 
     <!-- Include individual files as needed -->
-    <script src="js/bootstrap.min.js"></script>
+    <script src="{{ url_for('static',filename='js/bootstrap.min.js')}}"></script>
 
     <script>
-      var baseUrl = 'https://flask-decorassistant.herokuapp.com/homepage';
-
-      var isLoggedIn;
-
-
-      $(document).ready(function(){
-        console.log(document.referrer);
-        $.getJSON(baseUrl, function(signInData) {
-
-          isLoggedIn = signInData.success;
-          console.log(signInData);
-          if(isLoggedIn) {
-            document.getElementById("signInButton").innerHTML = '<a href="logout" class="btn btn-primary">Sign Out</a>';
-          } else {
-            document.getElementById("signInButton").innerHTML = '<a href="signin.html" class="btn btn-primary">Sign In</a>';
-          }
-
-        });
-
-      });
-
-
-
-      $(document).ready(function(){
-
-        $.getJSON(baseUrl, function(data) {
-
-          document.getElementById("userHeader").innerHTML = isLoggedIn ? data.user.name + "'s Rooms" : data.message;
-
-        });
-
-      });            
 
     </script>
 

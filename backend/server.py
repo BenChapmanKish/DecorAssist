@@ -145,7 +145,7 @@ class roomTypeError(BaseException):
 #####################
 
 # App setup
-app = flask.Flask(__name__)
+app = flask.Flask(__name__,static_folder='static',template_folder="static")
 app.config['MONGO_URI'] = 'mongodb://admin:admin@ds117888.mlab.com:17888/decorate_assistant'
 mongo = PyMongo(app)
 app.secret_key = 'DecorAssist secret key ;)'
@@ -223,55 +223,69 @@ def request_loader(request):
         user = User(username)
     except (userNotFound, roomNotFound):
         return
-    user.is_authenticated = request.form['password'] == user.password
-
-
-@app.route('/signup', methods=['POST'])
-def signup():
-    try:
-        username = flask.request.form['username']
-        password = flask.request.form['password']
-        name     = flask.request.form['name']
-    except:
-        return responseInvalidFormEntry
-
-    if ( len(list(mongo.db.users.find({'username':username}))) > 0 ):
-        return responseUsernameTaken
-    try:
-        mongo.db.users.insert({'username':username,'name':name,'password':password,'rooms':[]})
-        user = User(username)
-        flask_login.login_user(user)
-        return responseSignupSuccess
-    except:
-        return responseErrorCreatingUser
     
+    
+
+
+@app.route('/signup', methods=['GET','POST'])
+def signup():
+    if flask.request.method == 'POST':
+
+        try:
+            username = flask.request.form['username']
+            password = flask.request.form['password']
+            name     = flask.request.form['name']
+            print(username,password,name)
+        except:
+            return responseInvalidFormEntry
+        
+        if ( len(list(mongo.db.users.find({'username':username}))) > 0 ):
+            return flask.render_template('signup.html',message='Sorry! Username is taken!')
+        
+        try:
+            print ('tefewfawqef')
+            mongo.db.users.insert({'username':username,'name':name,'password':password,'rooms':[]})
+            user = User(username)
+            flask_login.login_user(user)
+            return flask.redirect('/')
+        except:
+            pass 
+        return flask.render_template('signup.html',message='There was an error.')
+    else:
+        # # Check if a user is already authenticated:
+        if flask_login.current_user.is_authenticated:
+            return flask.redirect('/')
+
+        return flask.render_template('signup.html')
+
+
 
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if flask.request.method == 'GET':
-        return '''
-               <form action='login' method='POST'>
-                <input type='text' name='username' id='username' placeholder='username'/>
-                <input type='password' name='password' id='password' placeholder='password'/>
-                <input type='submit' name='submit'/>
-               </form>
-               '''
-    
-    try:
-        print(flask.request.form,sys.stderr)
-        username = flask.request.form['username']
-    except:
-        return responseInvalidFormEntry
+        # Check if a user is already authenticated:
+        if flask_login.current_user.is_authenticated:
+            return flask.redirect('/')
 
-    try:    
-        user = User(username)
-        if flask.request.form['password'] == user.password:
-            flask_login.login_user(user)
-            return responseLoginSuccess
-    except:
-        return responseInvalidLogin
+        return flask.render_template('signin.html')
+    elif flask.request.method == 'POST':
+        try:
+            print(flask.request.form,sys.stderr)
+            username = flask.request.form['username']
+        except:
+            return responseInvalidFormEntry
+
+        try:    
+            user = User(username)
+            if flask.request.form['password'] == user.password:
+                flask_login.login_user(user)
+                return flask.redirect('/')
+        except:
+            pass
+
+        return flask.render_template('signin.html',message='Wrong username/password!')
 
 @app.route('/delete_self')
 @flask_login.login_required
@@ -296,18 +310,19 @@ def delete_self():
 @flask_login.login_required
 def homepage():
     user = flask_login.current_user
-    return json.dumps({
-        'success': True,
-        'user': {
-            'username': user.id,
-            'name': user.name,
-        },
-        'rooms': [{
-                   'id': str(room.id),
-                 'type': room.type,
-            'furniture': room.furniture
-            } for room in user.rooms]
-    })
+    # return json.dumps({
+    #     'success': True,
+    #     'user': {
+    #         'username': user.id,
+    #         'name': user.name,
+    #     },
+    #     'rooms': [{
+    #                'id': str(room.id),
+    #              'type': room.type,
+    #         'furniture': room.furniture
+    #         } for room in user.rooms]
+    # })
+    return flask.render_template('index.html')
 
 
 @app.route('/room/<room_id>')
@@ -498,5 +513,5 @@ def logout():
 
 @login_manager.unauthorized_handler
 def unauthorized_handler():
-    return responseNotLoggedIn
+    return flask.redirect('/login')
 

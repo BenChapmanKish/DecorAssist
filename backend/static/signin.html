@@ -1,0 +1,52 @@
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+    <link rel="icon" href="{{ url_for('static',filename='ico/favicon.ico')}}">
+
+    <title>Sign in to DecorAssist</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="{{ url_for('static',filename='css/bootstrap.min.css')}}" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href="{{ url_for('static',filename='css/signin.css')}}" rel="stylesheet">
+  </head>
+
+  <body class="text-center">
+    <form class="form-signin" action="/login" method="POST">
+      <img class="mb-4" src="{{ url_for('static',filename='img/DecorAssist.svg') }}" viewBox="0 0 50 50" alt="" width="250" height="250">
+      <h1 class="h3 mb-3 font-weight-normal">Please sign in</h1>
+      {% if message %}
+      <div class="alert alert-danger">
+        {{ "Error: " + message if message else ""}}
+      </div>
+      {% else %}
+      <br><br>
+      {% endif %}
+      <label for="username" class="sr-only">Username</label>
+      <input name="username" type="username" id="inputUsername" class="form-control" placeholder="Username" required autofocus>
+      <label for="inputPassword" class="sr-only">Password</label>
+      <input name="password" type="password" id="inputPassword" class="form-control" placeholder="Password" required>
+      <div class="checkbox mb-3" hidden>
+        <label>
+          <input type="checkbox" value="remember-me"> Remember me
+        </label>
+      </div>
+      <button class="btn btn-lg btn-primary btn-block" id='login_button' type="submit">Sign in</button>
+      <p class="mt-2 text-muted">Don't have an account? Click <a href='/signup'>here<a> to create an account.</p>
+      <p class="mt-5 mb-3 text-muted">&copy; 2018 DecorAssist</p>
+    </form>
+
+
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="{{ url_for('static',filename='js/jquery.min.js')}}"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="{{ url_for('static',filename='js/bootstrap.min.js')}}"></script>
+    <!-- Include signin.js -->
+  </body>
+</html>
